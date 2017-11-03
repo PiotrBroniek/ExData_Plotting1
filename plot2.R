@@ -1,18 +1,17 @@
 library(dplyr)
-setwd("C:/Users/Piotr/Documents/R/Coursera/Exploratory Analysis")
-## reading file 
-read.table("household_power_consumption.txt",header = TRUE, sep = ";", na.strings = "?")->tabelka
+setwd("C:/Users/Piotr/Documents/R/Coursera/Exploratory Analysis/project")
+#### Reading files 
+NEI <- readRDS("summarySCC_PM25.rds")
+SCC <- readRDS("Source_Classification_Code.rds")
 
-## change of date format and filtering
-tabelka2<-tabelka %>% mutate(Date = as.Date(tabelka$Date,"%d/%m/%Y")) %>% 
-  filter(Date >="2007-02-01",Date <= "2007-02-02")
-## change of Date time to as.Poxit 
-tabelka2<-tabelka2 %>% mutate(DateTime = as.POSIXct(paste(tabelka2$Date, tabelka2$Time), 
-                                                  format="%Y-%m-%d %H:%M:%S"))
-### creating png and plot                             
-png(filename = "plot2.png")
-with(tabelka2,plot(DateTime,Global_active_power, type = "l", xlab = NULL,
-    ylab = "Global Active Power (kilowatts)"))
+#### subsetting data to baltimore
+baltimore<-subset(NEI, fips == "24510")
+### applying sum to Emission by year
+with(baltimore,tapply(Emissions,year,sum,na.rm = TRUE))->baltimore1
+data.frame(year = names(baltimore1),value = baltimore1)->df1
+
+### open png, plot, close png
+png(filename = "Plot2.png")
+plot(df1$year,df1$value/1000, type = "p",  ylab = expression('Total PM'[2.5]*" Emissions in TMT"), 
+     xlab = "Years", main = expression('Total PM'[2.5]*" Emission in Baltimore 1999-2008"))
 dev.off()
-
-###

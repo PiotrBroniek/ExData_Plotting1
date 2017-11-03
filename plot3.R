@@ -1,21 +1,26 @@
 library(dplyr)
-setwd("C:/Users/Piotr/Documents/R/Coursera/Exploratory Analysis")
-## reading file 
-read.table("household_power_consumption.txt",header = TRUE, sep = ";", na.strings = "?")->tabelka
+setwd("C:/Users/Piotr/Documents/R/Coursera/Exploratory Analysis/project")
+#### Reading files 
+NEI <- readRDS("summarySCC_PM25.rds")
+SCC <- readRDS("Source_Classification_Code.rds")
 
-## change of date format and filtering
-tabelka2<-tabelka %>% mutate(Date = as.Date(tabelka$Date,"%d/%m/%Y")) %>% 
-  filter(Date >="2007-02-01",Date <= "2007-02-02")
-## change of Date time to as.Poxit 
-tabelka2<-tabelka2 %>% mutate(DateTime = as.POSIXct(paste(tabelka2$Date, tabelka2$Time), 
-                                                    format="%Y-%m-%d %H:%M:%S"))
-### creating png and plot  
-
+### subsetting data to Baltimore
+  baltimore<-subset(NEI, fips == "24510")
+### sum to Emissions by type and year
+  with(baltimore, tapply(Emissions,list(type,year), sum,na.rm = TRUE))->t1
+### preparing t1 to data frame  
+  (t1[1:4,])->c1
+  rep(colnames(t1),each = 4)->c2
+  rep(rownames(t1),times = 4)->c3
+  df2<-data.frame(cbind(as.numeric(c1),c2,c3), stringsAsFactors = FALSE)
+  colnames(df2)<-c("Emissions", "Year", "type")
+  df2$Emissions<-as.numeric(df2$Emissions)
+  df2$type<-as.factor(df2$type)
+### open png, ggplot, close png
   png(filename = "plot3.png")
-  with(tabelka2,plot(DateTime,Sub_metering_1, type = "l", ylab = "Energy sub metering"))
-  with(tabelka2,lines(DateTime,Sub_metering_2, type = "l", col = "red"))
-  with(tabelka2,lines(DateTime,Sub_metering_3, type = "l", col = "blue"))
-  legend("topright",legend = c("Sub_metering_1","Sub_metering_2","Sub_metering_3"), 
-       lty = c(1,1,1), col = c("black", "red","blue"))
-  dev.off()
+  par(mar = c(6,2,6,2))
+  ggplot(df2, aes(Year, Emissions))+geom_point(aes(color = type), size = 3)+
+    facet_grid(.~type)+ylab(expression('Total PM'[2.5]*" Emission in Baltimore 1999-2008"))+
+    ggtitle(expression('Total PM'[2.5]*" Emission in Baltimore 1999-2008 by type"))
+  dev.off() 
   
